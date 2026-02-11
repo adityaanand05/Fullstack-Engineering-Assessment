@@ -1,0 +1,133 @@
+// Prisma schema for AI Customer Support System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String?
+  agentType   AgentType @default(ROUTER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  messages    Message[]
+  context     Json?     // Store conversation context for AI
+}
+
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  agentType      AgentType?  // Which agent handled this message
+  metadata       Json?       // Additional metadata like tool calls, reasoning
+  createdAt      DateTime    @default(now())
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  orderNumber     String       @unique
+  userId          String
+  status          OrderStatus
+  total           Decimal      @db.Decimal(10, 2)
+  currency        String       @default("USD")
+  items           Json         // Array of order items
+  shippingAddress Json?
+  trackingNumber  String?
+  trackingUrl     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  payments        Payment[]
+  refunds         Refund[]
+}
+
+model Payment {
+  id              String    @id @default(cuid())
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("USD")
+  status          PaymentStatus
+  paymentMethod   String
+  transactionId   String?   @unique
+  createdAt       DateTime  @default(now())
+  invoices        Invoice[]
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  paymentId   String
+  payment     Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceUrl  String?
+  amount      Decimal   @db.Decimal(10, 2)
+  currency    String    @default("USD")
+  status      String
+  createdAt   DateTime  @default(now())
+}
+
+model Refund {
+  id          String      @id @default(cuid())
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount      Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  status      RefundStatus
+  reason      String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+enum AgentType {
+  ROUTER
+  SUPPORT
+  ORDER
+  BILLING
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  TOOL
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  PROCESSED
+  REJECTED
+}

@@ -1,0 +1,28 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".output/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "outputs": []
+    },
+    "db:generate": {
+      "outputs": ["prisma/migrations/**"]
+    },
+    "db:push": {
+      "outputs": []
+    },
+    "db:seed": {
+      "outputs": []
+    },
+    "db:studio": {
+      "persistent": true
+    }
+  },
+  "globalEnv": ["DATABASE_URL", "OPENAI_API_KEY"]
+}
